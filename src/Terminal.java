@@ -1,8 +1,9 @@
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Terminal {
     Parser parser;
-    //Implement each command in a method, for example:
     Terminal()
     {
         parser = new Parser();
@@ -18,10 +19,27 @@ public class Terminal {
         }
         return output;
     }
+    public ArrayList<String> mkdir()
+    {
+        ArrayList<String> exists = new ArrayList<>();
+        String myPath = System.getProperty("user.dir");
+        File myFile;
+        for (int i = 0; i < parser.args.length; i++)
+        {
+            if(parser.args[i].contains("/") || parser.args[i].contains("\\") )
+            {
+                myFile = new File(parser.args[i]);
+            }
+            else {
+                myFile = new File(myPath + '/' + parser.args[i]);
+            }
+            if(!myFile.mkdir())
+                exists.add(parser.args[i]);
+        }
+        return exists;
+    }
     public String pwd(){return " ";}
     public void cd(String[] args){}
-    // ...
-    //This method will choose the suitable command method to be called
     public void chooseCommandAction(String input)
     {
         parser.parse(input);
@@ -29,6 +47,11 @@ public class Terminal {
             case "echo":
                 System.out.println(this.echo());
                 break;
+            case "mkdir":
+                ArrayList<String> exists = new ArrayList<>();
+                exists = this.mkdir();
+                for (String exist : exists)
+                    System.out.println("mkdir: can't create directory '" + exist + "': File exists");
             case "pwd":
 
                 break;
