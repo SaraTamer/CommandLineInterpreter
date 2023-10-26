@@ -52,8 +52,9 @@ public class Terminal {
                 exists = this.mkdir();
                 for (String exist : exists)
                     System.out.println("mkdir: can't create directory '" + exist + "': File exists");
-            case "pwd":
-
+                break;
+            case "exit":
+                System.exit(0);
                 break;
             case "cd":
 
@@ -65,7 +66,12 @@ public class Terminal {
     {
         Terminal myterminal = new Terminal();
         Scanner in = new Scanner(System.in);
-        String input = in.nextLine();
-        myterminal.chooseCommandAction(input);
+        while (true)
+        {
+            System.out.print("> ");
+            String input = in.nextLine();
+            myterminal.chooseCommandAction(input);
+        }
+
     }
 }
