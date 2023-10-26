@@ -6,7 +6,8 @@ public class Terminal {
     // ...
     //This method will choose the suitable command method to be called
     public void chooseCommandAction(){}
-    public static void main(String[] args) {
-        System.out.println("Hello world!");
+    public static void main(String[] args)
+    {
+        System.out.println("commandName");
     }
 }
