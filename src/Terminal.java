@@ -22,17 +22,10 @@ public class Terminal {
     public ArrayList<String> mkdir()
     {
         ArrayList<String> exists = new ArrayList<>();
-        String myPath = System.getProperty("user.dir");
         File myFile;
         for (int i = 0; i < parser.args.length; i++)
         {
-            if(parser.args[i].contains("/") || parser.args[i].contains("\\") )
-            {
-                myFile = new File(parser.args[i]);
-            }
-            else {
-                myFile = new File(myPath + '/' + parser.args[i]);
-            }
+            myFile = new File(parser.args[i]);
             if(!myFile.mkdir())
                 exists.add(parser.args[i]);
         }
@@ -70,15 +63,8 @@ public class Terminal {
         return exceptions;
     }
     public void touch() throws IOException {
-        String myPath = System.getProperty("user.dir");
         File myFile;
-        if(parser.args[0].contains("/") || parser.args[0].contains("\\") )
-        {
-            myFile = new File(parser.args[0]);
-        }
-        else {
-            myFile = new File(myPath + '/' + parser.args[0]);
-        }
+        myFile = new File(parser.args[0]);
         myFile.createNewFile();
     }
     public String pwd(){return " ";}
