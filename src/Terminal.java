@@ -12,7 +12,7 @@ import java.util.*;
 
 public class Terminal {
     Parser parser;
-
+    private Path current_directory;
     Terminal() {
         parser = new Parser();
     }
@@ -32,7 +32,7 @@ public class Terminal {
         File myFile;
         for (int i = 0; i < parser.args.length; i++)
         {
-            myFile = new File(parser.args[i]);
+            myFile = new File(String.valueOf(current_directory),parser.args[i]);
             if(!myFile.mkdir())
                 exists.add(parser.args[i]);
         }
@@ -40,14 +40,13 @@ public class Terminal {
     }
     public void touch() throws IOException {
         File myFile;
-        myFile = new File(parser.args[0]);
+        myFile = new File(String.valueOf(current_directory),parser.args[0]);
         myFile.createNewFile();
     }
     public Map<String, Integer> rmdir()
     {
         Map<String, Integer> exceptions = new HashMap<>();
-        String myPath = System.getProperty("user.dir");
-        File[] files = new File(myPath).listFiles();
+        File[] files = new File(String.valueOf(current_directory)).listFiles();
         if(Objects.equals(parser.args[0], "*"))
         {
             for (File file : files)
@@ -128,8 +127,10 @@ public class Terminal {
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(currentDirectory)) {
             //Iterate over the files and directories in the current directory
             for (Path path : directoryStream) {
-                System.out.println(path.getFileName());
+                System.out.print(path.getFileName());
+                System.out.print("    ");
             }
+            System.out.print('\n');
         } catch (IOException e) {
             e.printStackTrace(); // from library
         }
@@ -147,8 +148,11 @@ public class Terminal {
 
             // Print the reversed paths
             for (Path path : reversed) {
-                System.out.println(path.getFileName());
+                System.out.print(path.getFileName());
+                System.out.print("    ");
             }
+            System.out.print('\n');
+
         } catch (IOException e) {
             e.printStackTrace(); // from library
         }
@@ -182,7 +186,6 @@ public class Terminal {
                     System.out.println(line);
 
                 }
-                System.out.println();
             } catch (IOException e) {
                 System.err.println("Error reading the file: " + e.getMessage());
             }
@@ -194,7 +197,7 @@ public class Terminal {
             try (BufferedReader reader = new BufferedReader(new FileReader(f1))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.out.print(line);
+                    System.out.println(line);
                 }
 
             } catch (IOException e) {
@@ -205,7 +208,6 @@ public class Terminal {
                 while ((line = reader.readLine()) != null) {
                     System.out.println(line);
                 }
-                System.out.println();
             } catch (IOException e) {
                 System.err.println("Error reading the file: " + e.getMessage());
             }
@@ -214,8 +216,23 @@ public class Terminal {
 
     }
     public void cd() {
-        Path currentDirectory = Paths.get(System.getProperty("user.dir"));
-        //Path newPath = currentDirectory.resolve();
+        Path myPath = null;
+        if(parser.args.length == 0)
+        {
+
+        }
+        else if(Objects.equals(parser.args[0], ".."))
+        {
+
+        }
+        else {
+            Path currentDirectory = Paths.get(System.getProperty("user.dir"));
+            myPath = currentDirectory.resolve(parser.args[0]);
+//            System.setProperty("user.dir", parser.args[0]);
+            System.setProperty("user.dir", System.getProperty("user.dir")+ "\\" + parser.args[0]);
+        }
+        this.current_directory = myPath;
+
 
 
 
@@ -253,12 +270,13 @@ public void chooseCommandAction(String input) throws IOException {
             touch();
             break;
         case "cd":
+            this.cd();
             break;
         case "ls":
-            this.ls();
-            break;
-        case "ls_r":
-            this.ls_r();
+            if(parser.args.length == 0 )
+                this.ls();
+            else if(Objects.equals(parser.args[0], "-r"))
+                this.ls_r();
             break;
         case "rm":
             this.rm();
@@ -278,6 +296,9 @@ public void chooseCommandAction(String input) throws IOException {
             break;
         case "cp":
             cp(parser.getArgs());
+            break;
+        default:
+            System.out.println(parser.commandName + ": Not found!");
             break;
         case "exit":
             System.exit(0);
