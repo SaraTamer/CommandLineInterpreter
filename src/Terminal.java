@@ -1,41 +1,90 @@
 import java.io.*;
-import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.File;
+import java.util.Collections;
 import java.io.IOException;
 import java.util.*;
 
 public class Terminal {
     Parser parser;
-    Terminal()
-    {
+    private Path current_directory;
+    private ArrayList<String> history;
+    Terminal() {
         parser = new Parser();
+        history = new ArrayList<>();
     }
-    public String echo()
-    {
+
+    public String echo() {
         String output = "";
-        for(int i = 0 ; i < parser.args.length; i++)
-        {
+        for (int i = 0; i < parser.args.length; i++) {
             output += parser.args[i];
-            if(i != parser.args.length - 1)
+            if (i != parser.args.length - 1)
                 output += ' ';
         }
+        history.add("echo");
         return output;
     }
-    public ArrayList<String> mkdir()
-    {
+
+    public ArrayList<String> mkdir() {
         ArrayList<String> exists = new ArrayList<>();
         File myFile;
         for (int i = 0; i < parser.args.length; i++)
         {
-            myFile = new File(parser.args[i]);
+            myFile = new File(String.valueOf(current_directory),parser.args[i]);
             if(!myFile.mkdir())
                 exists.add(parser.args[i]);
         }
+        history.add("mkdir");
+
         return exists;
     }
-    public String pwd(){return System.getProperty("user.dir");}
-    public void cd(String[] args){}
+    public void touch() throws IOException {
+        File myFile;
+        myFile = new File(String.valueOf(current_directory),parser.args[0]);
+        myFile.createNewFile();
+        history.add("touch");
+
+    }
+    public Map<String, Integer> rmdir()
+    {
+        Map<String, Integer> exceptions = new HashMap<>();
+        File[] files = new File(String.valueOf(current_directory)).listFiles();
+        if(Objects.equals(parser.args[0], "*"))
+        {
+            for (File file : files)
+            {
+                if(file.isDirectory() && !file.delete())
+                {
+                    exceptions.put(file.getName(),0);           // '0' represents non-empty directory
+                }
+                else if(file.isFile())
+                {
+                    exceptions.put(file.getName(),1);          // '1' represents not directory
+                }
+            }
+        }
+        else {
+            File file = new File(String.valueOf(current_directory) + "\\" + parser.args[0]);
+            if(!file.isDirectory() && !file.isFile())
+                exceptions.put(file.getName(),2);                // '2' represents no such file or directory
+            else if(file.isDirectory() && !file.delete())
+                exceptions.put(file.getName(),0);
+            else if(file.isFile())
+                exceptions.put(file.getName(),1);
+        }
+        history.add("rmdir");
+
+        return exceptions;
+    }
+    public String pwd(){
+        history.add("pwd");
+        return System.getProperty("user.dir");
+    }
     public boolean cp(String[] arg) {
         String source = arg[0];
         String dest = arg[1];
@@ -55,9 +104,10 @@ public class Terminal {
         } catch (IOException e) {
             System.err.println("An error occurred: " + e.getMessage());
         }
+        history.add("cp");
+
         return false;
     }
-
     public boolean wc(String[] arg) throws Exception {
         try {
             Path file = Paths.get(arg[0]);
@@ -79,9 +129,11 @@ public class Terminal {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        history.add("wc");
         return false;
     }
 
+<<<<<<< HEAD
     public void cp_r(File source, File target) throws IOException {
         if (source.isDirectory()) {
             if (!target.exists()) {
@@ -118,66 +170,153 @@ public class Terminal {
                 else if(file.isFile())
                 {
                     exceptions.put(file.getName(),1);          // '1' represents not directory
+=======
+    /*________________________Hadeer____________________________*/
+    public void ls() {
+        //Get the current directory
+        Path currentDirectory = Paths.get(System.getProperty("user.dir"));
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(currentDirectory)) {
+            //Iterate over the files and directories in the current directory
+            for (Path path : directoryStream) {
+                System.out.print(path.getFileName());
+                System.out.print("    ");
+            }
+            System.out.print('\n');
+        } catch (IOException e) {
+            e.printStackTrace(); // from library
+        }
+        history.add("ls");
+    }
+
+    public void ls_r() {
+        //Get the current directory
+        Path current = Paths.get(System.getProperty("user.dir"));
+        List<Path> reversed = new ArrayList<>();
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(current)) {
+            for (Path path : directoryStream) {
+                reversed.add(path);
+            }
+            Collections.reverse(reversed);
+
+            // Print the reversed paths
+            for (Path path : reversed) {
+                System.out.print(path.getFileName());
+                System.out.print("    ");
+            }
+            System.out.print('\n');
+
+        } catch (IOException e) {
+            e.printStackTrace(); // from library
+        }
+        history.add("ls -r");
+
+    }
+
+    public void rm() {
+        String[] temp = parser.getArgs(); // Specify the name of the file to remove
+        String fileName = temp[0];
+        File currentDirectory = new File(System.getProperty("user.dir"));
+        File fileToRemove = new File(currentDirectory, fileName);
+        if (fileToRemove.exists()) {
+            if (fileToRemove.delete()) {
+                System.out.println("File removed successfully: " + fileToRemove.getAbsolutePath());
+            } else {
+                System.out.println("Failed to remove the file: " + fileToRemove.getAbsolutePath());
+            }
+        } else {
+            System.out.println("File not found: " + fileToRemove.getAbsolutePath());
+        }
+        history.add("rm");
+
+    }
+    public void cat() {
+
+        String fileName = null;
+        if(parser.args.length == 1) {
+            String[] temp = parser.getArgs(); // Specify the name of the file to remove
+             fileName = temp[0];
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+
+>>>>>>> 99bbb35593adb781c919c18aebe3c998933f56e3
                 }
+            } catch (IOException e) {
+                System.err.println("Error reading the file: " + e.getMessage());
             }
         }
-        else {
-            File file = new File(parser.args[0]);
-            if(!file.isDirectory() && !file.isFile())
-                exceptions.put(file.getName(),2);
-            else if(file.isDirectory() && !file.delete())
-                exceptions.put(file.getName(),0);
-            else if(file.isFile())
-                exceptions.put(file.getName(),1);
-        }
+        else if(parser.args.length == 2){
+            String[] temp = parser.getArgs();
+            String f1 = temp[0];
+            String f2 = temp[1];
+            try (BufferedReader reader = new BufferedReader(new FileReader(f1))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                }
 
-        return exceptions;
-    }
-    public void touch() throws IOException {
-        File myFile;
-        myFile = new File(parser.args[0]);
-        myFile.createNewFile();
-    }
-    public String pwd(){return " ";}
-    public void cd(String[] args){}
-    public void chooseCommandAction(String input) throws IOException {
-        parser.parse(input);
-        switch (this.parser.commandName){
-            case "echo":
-                System.out.println(this.echo());
-                break;
-            case "mkdir":
-                ArrayList<String> exists = new ArrayList<>();
-                exists = this.mkdir();
-                for (String exist : exists)
-                    System.out.println("mkdir: can't create directory '" + exist + "': File exists");
-                break;
-            case "wc":
-                try {
-                    wc(parser.getArgs());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+            } catch (IOException e) {
+                System.err.println("Error reading the file: " + e.getMessage());
+            }
+            try (BufferedReader reader = new BufferedReader(new FileReader(f2))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
                 }
-                break;
-            case "pwd":
-                System.out.println(pwd());
-                break;
-            case "cp":
-                cp(parser.getArgs());
-            case "rmdir":
-                Map<String, Integer> exceptions = new HashMap<>();
-                exceptions = rmdir();
-                for(Map.Entry<String, Integer> exception: exceptions.entrySet())
+            } catch (IOException e) {
+                System.err.println("Error reading the file: " + e.getMessage());
+            }
+
+        }
+        history.add("cat");
+
+    }
+    public void cd()
+    {
+        if(parser.args.length == 0)
+        {
+            current_directory = Path.of(System.getProperty("user.home"));
+        }
+        else if(Objects.equals(parser.args[0], ".."))
+        {
+            current_directory = current_directory.getParent();
+        }
+        else {
+            if(Path.of(parser.args[0]).isAbsolute())
+            {
+                current_directory = Path.of(parser.args[0]);
+            }
+            else
+                current_directory = Path.of(System.getProperty("user.dir") + "\\" + parser.args[0]);
+        }
+        System.setProperty("user.dir", String.valueOf(current_directory));
+
+    }
+
+/*--------------------------------------------------------------*/
+public void chooseCommandAction(String input) throws IOException {
+    parser.parse(input);
+    switch (this.parser.commandName) {
+        case "echo":
+            System.out.println(this.echo());
+            break;
+        case "mkdir":
+            ArrayList<String> exists = new ArrayList<>();
+            exists = this.mkdir();
+            for (String exist : exists)
+                System.out.println("mkdir: can't create directory '" + exist + "': File exists");
+            break;
+        case "rmdir":
+            Map<String, Integer> exceptions = new HashMap<>();
+            exceptions = rmdir();
+            for(Map.Entry<String, Integer> exception: exceptions.entrySet())
+            {
+                if(exception.getValue() == 0)
                 {
-                    if(exception.getValue() == 0)
-                    {
-                        System.out.println("rmdir: '" + exception.getKey() + "': Directory not empty");
-                    }
-                    else if (exception.getValue() == 1)
-                        System.out.println("rmdir: '" + exception.getKey() + "': Not a directory");
-                    else
-                        System.out.println("rmdir: '" + exception.getKey() + "': No such file or directory");
+                    System.out.println("rmdir: '" + exception.getKey() + "': Directory not empty");
                 }
+<<<<<<< HEAD
                 break;
             case "touch":
                 touch();
@@ -201,12 +340,65 @@ public class Terminal {
                 }
                 break;
         }
+=======
+                else if (exception.getValue() == 1)
+                    System.out.println("rmdir: '" + exception.getKey() + "': Not a directory");
+                else
+                    System.out.println("rmdir: '" + exception.getKey() + "': No such file or directory");
+            }
+            break;
+        case "touch":
+            touch();
+            break;
+        case "cd":
+            this.cd();
+            break;
+        case "ls":
+            if(parser.args.length == 0 )
+                this.ls();
+            else if(Objects.equals(parser.args[0], "-r"))
+                this.ls_r();
+            break;
+        case "rm":
+            this.rm();
+            break;
+        case "cat":
+            this.cat();
+            break;
+        case "wc":
+            try {
+                wc(parser.getArgs());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            break;
+        case "pwd":
+            System.out.println(pwd());
+            break;
+        case "cp":
+            cp(parser.getArgs());
+            break;
+        case "history":
+            for(int i = 0; i < history.size();i++)
+            {
+                System.out.println(i+1 + " " + history.get(i));
+            }
+            break;
+        default:
+            System.out.println(parser.commandName + ": Not found!");
+            break;
+        case "exit":
+            System.exit(0);
+            break;
+>>>>>>> 99bbb35593adb781c919c18aebe3c998933f56e3
     }
+}
+
     public static void main(String[] args) throws IOException {
+
         Terminal myterminal = new Terminal();
         Scanner in = new Scanner(System.in);
-        while (true)
-        {
+        while (true) {
             System.out.print("> ");
             String input = in.nextLine();
             myterminal.chooseCommandAction(input);
