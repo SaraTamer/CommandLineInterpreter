@@ -82,7 +82,24 @@ public class Terminal {
         return false;
     }
 
+    public void cp_r(File source, File target) throws IOException {
+        if (source.isDirectory()) {
+            if (!target.exists()) {
+                target.mkdir();
+            }
 
+            String[] files = source.list();
+            if (files != null) {
+                for (String file : files) {
+                    File srcFile = new File(source, file);
+                    File destFile = new File(target, file);
+                    cp_r(srcFile, destFile); // Recursively copy the subdirectory or file
+                }
+            }
+        } else {
+            Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
     public void chooseCommandAction(String input)
     {
     public Map<String, Integer> rmdir()
@@ -171,7 +188,18 @@ public class Terminal {
             case "cd":
 
                 break;
+            case "cp_r":
+                String []arg= parser.getArgs();
+                File sourceDirectory = new File(arg[0]);
+                File targetDirectory = new File(arg[1]);
 
+                try {
+                    cp_r(sourceDirectory, targetDirectory);
+                    System.out.println("Directory copied successfully.");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
     }
     public static void main(String[] args) throws IOException {
