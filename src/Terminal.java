@@ -13,8 +13,10 @@ import java.util.*;
 public class Terminal {
     Parser parser;
     private Path current_directory;
+    private ArrayList<String> history;
     Terminal() {
         parser = new Parser();
+        history = new ArrayList<>();
     }
 
     public String echo() {
@@ -24,6 +26,7 @@ public class Terminal {
             if (i != parser.args.length - 1)
                 output += ' ';
         }
+        history.add("echo");
         return output;
     }
 
@@ -36,12 +39,16 @@ public class Terminal {
             if(!myFile.mkdir())
                 exists.add(parser.args[i]);
         }
+        history.add("mkdir");
+
         return exists;
     }
     public void touch() throws IOException {
         File myFile;
         myFile = new File(String.valueOf(current_directory),parser.args[0]);
         myFile.createNewFile();
+        history.add("touch");
+
     }
     public Map<String, Integer> rmdir()
     {
@@ -62,7 +69,7 @@ public class Terminal {
             }
         }
         else {
-            File file = new File(parser.args[0]);
+            File file = new File(String.valueOf(current_directory) + "\\" + parser.args[0]);
             if(!file.isDirectory() && !file.isFile())
                 exceptions.put(file.getName(),2);                // '2' represents no such file or directory
             else if(file.isDirectory() && !file.delete())
@@ -70,11 +77,14 @@ public class Terminal {
             else if(file.isFile())
                 exceptions.put(file.getName(),1);
         }
+        history.add("rmdir");
 
         return exceptions;
     }
-
-    public String pwd(){return System.getProperty("user.dir");}
+    public String pwd(){
+        history.add("pwd");
+        return System.getProperty("user.dir");
+    }
     public boolean cp(String[] arg) {
         String source = arg[0];
         String dest = arg[1];
@@ -94,6 +104,8 @@ public class Terminal {
         } catch (IOException e) {
             System.err.println("An error occurred: " + e.getMessage());
         }
+        history.add("cp");
+
         return false;
     }
     public boolean wc(String[] arg) throws Exception {
@@ -117,6 +129,7 @@ public class Terminal {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        history.add("wc");
         return false;
     }
 
@@ -134,6 +147,7 @@ public class Terminal {
         } catch (IOException e) {
             e.printStackTrace(); // from library
         }
+        history.add("ls");
     }
 
     public void ls_r() {
@@ -156,6 +170,8 @@ public class Terminal {
         } catch (IOException e) {
             e.printStackTrace(); // from library
         }
+        history.add("ls -r");
+
     }
 
     public void rm() {
@@ -172,6 +188,7 @@ public class Terminal {
         } else {
             System.out.println("File not found: " + fileToRemove.getAbsolutePath());
         }
+        history.add("rm");
 
     }
     public void cat() {
@@ -213,28 +230,28 @@ public class Terminal {
             }
 
         }
+        history.add("cat");
 
     }
-    public void cd() {
-        Path myPath = null;
+    public void cd()
+    {
         if(parser.args.length == 0)
         {
-
+            current_directory = Path.of(System.getProperty("user.home"));
         }
         else if(Objects.equals(parser.args[0], ".."))
         {
-
+            current_directory = current_directory.getParent();
         }
         else {
-            Path currentDirectory = Paths.get(System.getProperty("user.dir"));
-            myPath = currentDirectory.resolve(parser.args[0]);
-//            System.setProperty("user.dir", parser.args[0]);
-            System.setProperty("user.dir", System.getProperty("user.dir")+ "\\" + parser.args[0]);
+            if(Path.of(parser.args[0]).isAbsolute())
+            {
+                current_directory = Path.of(parser.args[0]);
+            }
+            else
+                current_directory = Path.of(System.getProperty("user.dir") + "\\" + parser.args[0]);
         }
-        this.current_directory = myPath;
-
-
-
+        System.setProperty("user.dir", String.valueOf(current_directory));
 
     }
 
@@ -296,6 +313,12 @@ public void chooseCommandAction(String input) throws IOException {
             break;
         case "cp":
             cp(parser.getArgs());
+            break;
+        case "history":
+            for(int i = 0; i < history.size();i++)
+            {
+                System.out.println(i+1 + " " + history.get(i));
+            }
             break;
         default:
             System.out.println(parser.commandName + ": Not found!");
