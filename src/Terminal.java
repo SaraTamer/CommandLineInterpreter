@@ -62,10 +62,21 @@ public class Terminal {
     }
     public void touch() throws IOException {
         File myFile;
-        myFile = new File(String.valueOf(current_directory),parser.args[0]);
-        myFile.createNewFile();
+        if(Path.of(parser.args[0]).isAbsolute())
+        {
+            myFile = new File(parser.args[0]);
+        }
+        else {
+            myFile = new File(String.valueOf(current_directory),parser.args[0]);
+        }
+        try{
+            myFile.createNewFile();
+            }
+        catch (IOException e)
+        {
+            System.out.println("No such file or directory!");
+        }
         history.add("touch");
-
     }
     public Map<String, Integer> rmdir()
     {
@@ -86,7 +97,15 @@ public class Terminal {
             }
         }
         else if(parser.args.length == 1){
-            File file = new File(String.valueOf(current_directory) + "\\" + parser.args[0]);
+            File file;
+            if(Path.of(parser.args[0]).isAbsolute())
+            {
+                file = new File(parser.args[0]);
+            }
+            else
+            {
+                file = new File(String.valueOf(current_directory) + "\\" + parser.args[0]);
+            }
             if(!file.isDirectory() && !file.isFile())
                 exceptions.put(file.getName(),2);                // '2' represents no such file or directory
             else if(file.isDirectory() && !file.delete())
@@ -102,10 +121,10 @@ public class Terminal {
         return exceptions;
     }
     public String pwd(){
+        history.add("pwd");
         if(parser.args.length == 0)
             return System.getProperty("user.dir");
 
-        history.add("pwd");
         return "Unexpected Arguments!";
     }
     public boolean cp(String[] arg) {
@@ -160,7 +179,6 @@ public class Terminal {
             if (!target.exists()) {
                 target.mkdir();
             }
-
             String[] files = source.list();
             if (files != null) {
                 for (String file : files) {
@@ -169,13 +187,10 @@ public class Terminal {
                     cp_r(srcFile, destFile); // Recursively copy the subdirectory or file
                 }
             }
-        } else {
+        } else
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }
         history.add("cp -r");
     }
-
-    /*________________________Hadeer____________________________*/
     public void ls() {
         //Get the current directory
         Path currentDirectory = Paths.get(System.getProperty("user.dir"));
@@ -278,23 +293,15 @@ public class Terminal {
     public void cd()
     {
         if(parser.args.length == 0)
-        {
             current_directory = Path.of(System.getProperty("user.home"));
-        }
         else if(Objects.equals(parser.args[0], "..") && parser.args.length == 1)
-        {
             current_directory = current_directory.getParent();
-        }
         else if(parser.args.length == 1){
             File myfile;
             if(Path.of(parser.args[0]).isAbsolute())
-            {
                 myfile = new File(parser.args[0]);
-            }
             else
-            {
                 myfile = new File(System.getProperty("user.dir") + "\\" + parser.args[0]);
-            }
             if(myfile.exists())
                 current_directory = myfile.toPath();
             else
@@ -303,8 +310,8 @@ public class Terminal {
         else
             System.out.println("Unexpected Arguments!");
         System.setProperty("user.dir", String.valueOf(current_directory));
+        history.add("cd");
     }
-    /*--------------------------------------------------------------*/
     public void chooseCommandAction(String input) throws IOException {
         parser.parse(input);
         switch (this.parser.commandName) {
@@ -323,9 +330,7 @@ public class Terminal {
                 for(Map.Entry<String, Integer> exception: exceptions.entrySet())
                 {
                     if(exception.getValue() == 0)
-                    {
                         System.out.println("rmdir: '" + exception.getKey() + "': Directory not empty");
-                    }
                     else if (exception.getValue() == 1)
                         System.out.println("rmdir: '" + exception.getKey() + "': Not a directory");
                     else
@@ -364,13 +369,11 @@ public class Terminal {
                     try {
                         wc(parser.getArgs());
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        System.out.println("No such file or directory!");
                     }
                 }
                 else
-                {
                     System.out.println("Unexpected Arguments!");
-                }
                 break;
             case "pwd":
                 System.out.println(pwd());
