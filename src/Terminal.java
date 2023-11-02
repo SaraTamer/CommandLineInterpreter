@@ -376,7 +376,7 @@ public class Terminal {
                 System.out.println(pwd());
                 break;
             case "cp":
-                if(parser.args.length == 0)
+                if(parser.args.length == 2)
                     cp(parser.getArgs());
                 else if (Objects.equals(parser.args[0], "-r") && parser.args.length == 3){
                     String []arg= parser.getArgs();
@@ -432,7 +432,8 @@ public class Terminal {
                 "11- rm\n" +
                 "12- cat\n" +
                 "13- wc\n" +
-                "14- history");
+                "14- history\n" +
+                "15- exit");
     }
     public static void main(String[] args) throws IOException {
         printList();
