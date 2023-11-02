@@ -51,7 +51,7 @@ public class Terminal {
     {
         Map<String, Integer> exceptions = new HashMap<>();
         File[] files = new File(String.valueOf(current_directory)).listFiles();
-        if(Objects.equals(parser.args[0], "*"))
+        if(Objects.equals(parser.args[0], "*") && parser.args.length == 1)
         {
             for (File file : files)
             {
@@ -65,7 +65,7 @@ public class Terminal {
                 }
             }
         }
-        else {
+        else if(parser.args.length == 1){
             File file = new File(String.valueOf(current_directory) + "\\" + parser.args[0]);
             if(!file.isDirectory() && !file.isFile())
                 exceptions.put(file.getName(),2);                // '2' represents no such file or directory
@@ -74,13 +74,19 @@ public class Terminal {
             else if(file.isFile())
                 exceptions.put(file.getName(),1);
         }
+        else
+        {
+            System.out.println("Unexpected Arguments!");
+        }
         history.add("rmdir");
-
         return exceptions;
     }
     public String pwd(){
+        if(parser.args.length == 0)
+            return System.getProperty("user.dir");
+
         history.add("pwd");
-        return System.getProperty("user.dir");
+        return "Unexpected Arguments!";
     }
     public boolean cp(String[] arg) {
         String source = arg[0];
@@ -189,7 +195,6 @@ public class Terminal {
         history.add("ls -r");
 
     }
-
     public void rm() {
         String[] temp = parser.getArgs(); // Specify the name of the file to remove
         String fileName = temp[0];
@@ -205,7 +210,6 @@ public class Terminal {
             System.out.println("File not found: " + fileToRemove.getAbsolutePath());
         }
         history.add("rm");
-
     }
     public void cat() {
 
@@ -244,10 +248,12 @@ public class Terminal {
             } catch (IOException e) {
                 System.err.println("Error reading the file: " + e.getMessage());
             }
-
+        }
+        else
+        {
+            System.out.println("Unexpected Arguments!");
         }
         history.add("cat");
-
     }
     public void cd()
     {
@@ -255,22 +261,29 @@ public class Terminal {
         {
             current_directory = Path.of(System.getProperty("user.home"));
         }
-        else if(Objects.equals(parser.args[0], ".."))
+        else if(Objects.equals(parser.args[0], "..") && parser.args.length == 1)
         {
             current_directory = current_directory.getParent();
         }
-        else {
+        else if(parser.args.length == 1){
+            File myfile;
             if(Path.of(parser.args[0]).isAbsolute())
             {
-                current_directory = Path.of(parser.args[0]);
+                myfile = new File(parser.args[0]);
             }
             else
-                current_directory = Path.of(System.getProperty("user.dir") + "\\" + parser.args[0]);
+            {
+                myfile = new File(System.getProperty("user.dir") + "\\" + parser.args[0]);
+            }
+            if(myfile.exists())
+                current_directory = myfile.toPath();
+            else
+                System.out.println("No such directory!");
         }
+        else
+            System.out.println("Unexpected Arguments!");
         System.setProperty("user.dir", String.valueOf(current_directory));
-
     }
-
     /*--------------------------------------------------------------*/
     public void chooseCommandAction(String input) throws IOException {
         parser.parse(input);
@@ -300,7 +313,10 @@ public class Terminal {
                 }
                 break;
             case "touch":
-                touch();
+                if(parser.args.length == 1)
+                    touch();
+                else
+                    System.out.println("Unexpected Arguments!");
                 break;
             case "cd":
                 this.cd();
@@ -308,20 +324,32 @@ public class Terminal {
             case "ls":
                 if(parser.args.length == 0 )
                     this.ls();
-                else if(Objects.equals(parser.args[0], "-r"))
+                else if(Objects.equals(parser.args[0], "-r") && parser.args.length == 1)
                     this.ls_r();
+                else
+                    System.out.println("Unexpected Arguments!");
                 break;
             case "rm":
-                this.rm();
+                if(parser.args.length == 1)
+                    this.rm();
+                else
+                    System.out.println("Unexpected Arguments!");
                 break;
             case "cat":
                 this.cat();
                 break;
             case "wc":
-                try {
-                    wc(parser.getArgs());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                if(parser.args.length == 1)
+                {
+                    try {
+                        wc(parser.getArgs());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                else
+                {
+                    System.out.println("Unexpected Arguments!");
                 }
                 break;
             case "pwd":
@@ -330,7 +358,7 @@ public class Terminal {
             case "cp":
                 if(parser.args.length == 0)
                     cp(parser.getArgs());
-                else if (Objects.equals(parser.args[0], "-r")){
+                else if (Objects.equals(parser.args[0], "-r") && parser.args.length == 3){
                     String []arg= parser.getArgs();
                     File sourceDirectory = new File(arg[1]);
                     File targetDirectory = new File(arg[2]);
@@ -341,15 +369,23 @@ public class Terminal {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    break;
+                }
+                else
+                {
+                    System.out.println("Unexpected Arguments!");
                 }
                 break;
-            case "cp_r":
-
             case "history":
-                for(int i = 0; i < history.size();i++)
+                if(parser.args.length == 0)
                 {
-                    System.out.println(i+1 + " " + history.get(i));
+                    for(int i = 0; i < history.size();i++)
+                    {
+                        System.out.println(i+1 + " " + history.get(i));
+                    }
+                }
+                else
+                {
+                    System.out.println("Unexpected Arguments!");
                 }
                 break;
             default:
@@ -360,9 +396,26 @@ public class Terminal {
                 break;
         }
     }
-
+    public static void printList()
+    {
+        System.out.println("CommandLineInterpreter Menu:\n" +
+                "1- echo\n" +
+                "2- pwd\n" +
+                "3- cd\n" +
+                "4- ls\n" +
+                "5- ls -r\n" +
+                "6- mkdir\n" +
+                "7- rmdir\n" +
+                "8- touch\n" +
+                "9- cp\n" +
+                "10- cp -r\n" +
+                "11- rm\n" +
+                "12- cat\n" +
+                "13- wc\n" +
+                "14- history");
+    }
     public static void main(String[] args) throws IOException {
-
+        printList();
         Terminal myterminal = new Terminal();
         Scanner in = new Scanner(System.in);
         while (true) {
