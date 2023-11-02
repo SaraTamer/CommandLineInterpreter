@@ -1,11 +1,8 @@
 import java.io.*;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.io.IOException;
 import java.util.*;
@@ -17,8 +14,8 @@ public class Terminal {
     Terminal() {
         parser = new Parser();
         history = new ArrayList<>();
+        current_directory = Path.of(System.getProperty("user.dir"));
     }
-
     public String echo() {
         String output = "";
         for (int i = 0; i < parser.args.length; i++) {
@@ -31,6 +28,7 @@ public class Terminal {
     }
 
     public ArrayList<String> mkdir() {
+
         ArrayList<String> exists = new ArrayList<>();
         File myFile;
         for (int i = 0; i < parser.args.length; i++)
@@ -40,7 +38,6 @@ public class Terminal {
                 exists.add(parser.args[i]);
         }
         history.add("mkdir");
-
         return exists;
     }
     public void touch() throws IOException {
@@ -132,8 +129,6 @@ public class Terminal {
         history.add("wc");
         return false;
     }
-
-<<<<<<< HEAD
     public void cp_r(File source, File target) throws IOException {
         if (source.isDirectory()) {
             if (!target.exists()) {
@@ -151,26 +146,9 @@ public class Terminal {
         } else {
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
+        history.add("cp -r");
     }
-    public void chooseCommandAction(String input)
-    {
-    public Map<String, Integer> rmdir()
-    {
-        Map<String, Integer> exceptions = new HashMap<>();
-        String myPath = System.getProperty("user.dir");
-        File[] files = new File(myPath).listFiles();
-        if(Objects.equals(parser.args[0], "*"))
-        {
-            for (File file : files)
-            {
-                if(file.isDirectory() && !file.delete())
-                {
-                    exceptions.put(file.getName(),0);           // '0' represents non-empty directory
-                }
-                else if(file.isFile())
-                {
-                    exceptions.put(file.getName(),1);          // '1' represents not directory
-=======
+
     /*________________________Hadeer____________________________*/
     public void ls() {
         //Get the current directory
@@ -234,13 +212,12 @@ public class Terminal {
         String fileName = null;
         if(parser.args.length == 1) {
             String[] temp = parser.getArgs(); // Specify the name of the file to remove
-             fileName = temp[0];
+            fileName = temp[0];
             try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     System.out.println(line);
 
->>>>>>> 99bbb35593adb781c919c18aebe3c998933f56e3
                 }
             } catch (IOException e) {
                 System.err.println("Error reading the file: " + e.getMessage());
@@ -294,105 +271,95 @@ public class Terminal {
 
     }
 
-/*--------------------------------------------------------------*/
-public void chooseCommandAction(String input) throws IOException {
-    parser.parse(input);
-    switch (this.parser.commandName) {
-        case "echo":
-            System.out.println(this.echo());
-            break;
-        case "mkdir":
-            ArrayList<String> exists = new ArrayList<>();
-            exists = this.mkdir();
-            for (String exist : exists)
-                System.out.println("mkdir: can't create directory '" + exist + "': File exists");
-            break;
-        case "rmdir":
-            Map<String, Integer> exceptions = new HashMap<>();
-            exceptions = rmdir();
-            for(Map.Entry<String, Integer> exception: exceptions.entrySet())
-            {
-                if(exception.getValue() == 0)
+    /*--------------------------------------------------------------*/
+    public void chooseCommandAction(String input) throws IOException {
+        parser.parse(input);
+        switch (this.parser.commandName) {
+            case "echo":
+                System.out.println(this.echo());
+                break;
+            case "mkdir":
+                ArrayList<String> exists = new ArrayList<>();
+                exists = this.mkdir();
+                for (String exist : exists)
+                    System.out.println("mkdir: can't create directory '" + exist + "': File exists");
+                break;
+            case "rmdir":
+                Map<String, Integer> exceptions = new HashMap<>();
+                exceptions = rmdir();
+                for(Map.Entry<String, Integer> exception: exceptions.entrySet())
                 {
-                    System.out.println("rmdir: '" + exception.getKey() + "': Directory not empty");
+                    if(exception.getValue() == 0)
+                    {
+                        System.out.println("rmdir: '" + exception.getKey() + "': Directory not empty");
+                    }
+                    else if (exception.getValue() == 1)
+                        System.out.println("rmdir: '" + exception.getKey() + "': Not a directory");
+                    else
+                        System.out.println("rmdir: '" + exception.getKey() + "': No such file or directory");
                 }
-<<<<<<< HEAD
                 break;
             case "touch":
                 touch();
                 break;
+            case "cd":
+                this.cd();
+                break;
+            case "ls":
+                if(parser.args.length == 0 )
+                    this.ls();
+                else if(Objects.equals(parser.args[0], "-r"))
+                    this.ls_r();
+                break;
+            case "rm":
+                this.rm();
+                break;
+            case "cat":
+                this.cat();
+                break;
+            case "wc":
+                try {
+                    wc(parser.getArgs());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                break;
+            case "pwd":
+                System.out.println(pwd());
+                break;
+            case "cp":
+                if(parser.args.length == 0)
+                    cp(parser.getArgs());
+                else if (Objects.equals(parser.args[0], "-r")){
+                    String []arg= parser.getArgs();
+                    File sourceDirectory = new File(arg[1]);
+                    File targetDirectory = new File(arg[2]);
+
+                    try {
+                        cp_r(sourceDirectory, targetDirectory);
+                        System.out.println("Directory copied successfully.");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                }
+                break;
+            case "cp_r":
+
+            case "history":
+                for(int i = 0; i < history.size();i++)
+                {
+                    System.out.println(i+1 + " " + history.get(i));
+                }
+                break;
+            default:
+                System.out.println(parser.commandName + ": Not found!");
+                break;
             case "exit":
                 System.exit(0);
                 break;
-            case "cd":
-
-                break;
-            case "cp_r":
-                String []arg= parser.getArgs();
-                File sourceDirectory = new File(arg[0]);
-                File targetDirectory = new File(arg[1]);
-
-                try {
-                    cp_r(sourceDirectory, targetDirectory);
-                    System.out.println("Directory copied successfully.");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                break;
         }
-=======
-                else if (exception.getValue() == 1)
-                    System.out.println("rmdir: '" + exception.getKey() + "': Not a directory");
-                else
-                    System.out.println("rmdir: '" + exception.getKey() + "': No such file or directory");
-            }
-            break;
-        case "touch":
-            touch();
-            break;
-        case "cd":
-            this.cd();
-            break;
-        case "ls":
-            if(parser.args.length == 0 )
-                this.ls();
-            else if(Objects.equals(parser.args[0], "-r"))
-                this.ls_r();
-            break;
-        case "rm":
-            this.rm();
-            break;
-        case "cat":
-            this.cat();
-            break;
-        case "wc":
-            try {
-                wc(parser.getArgs());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            break;
-        case "pwd":
-            System.out.println(pwd());
-            break;
-        case "cp":
-            cp(parser.getArgs());
-            break;
-        case "history":
-            for(int i = 0; i < history.size();i++)
-            {
-                System.out.println(i+1 + " " + history.get(i));
-            }
-            break;
-        default:
-            System.out.println(parser.commandName + ": Not found!");
-            break;
-        case "exit":
-            System.exit(0);
-            break;
->>>>>>> 99bbb35593adb781c919c18aebe3c998933f56e3
     }
-}
 
     public static void main(String[] args) throws IOException {
 
@@ -403,6 +370,5 @@ public void chooseCommandAction(String input) throws IOException {
             String input = in.nextLine();
             myterminal.chooseCommandAction(input);
         }
-
     }
 }
